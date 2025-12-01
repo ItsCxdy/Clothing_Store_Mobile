@@ -1,0 +1,55 @@
+<LoginScreen>:
+    name: 'login'
+    
+    MDBoxLayout:
+        orientation: 'vertical'
+        padding: "48dp"
+        spacing: "20dp"
+        md_bg_color: root.theme_cls.accent_color
+        
+        MDCard:
+            size_hint: None, None
+            size: "300dp", "400dp"
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            padding: "20dp"
+            spacing: "20dp"
+            orientation: 'vertical'
+            elevation: 10
+            
+            MDLabel:
+                text: "Store Login"
+                font_style: "H4"
+                halign: "center"
+                size_hint_y: None
+                height: self.texture_size[1]
+                
+            MDTextField:
+                id: username_input  # Updated ID to match Python (Fix 1)
+                hint_text: "Username" # Removed hardcoded hint (Fix 5)
+                helper_text: "Enter your username"
+                mode: "rectangle"
+                icon_left: "account"
+
+            MDTextField:
+                id: password_input  # Updated ID to match Python (Fix 1)
+                hint_text: "Password" # Removed hardcoded hint (Fix 5)
+                helper_text: "Enter your password"
+                mode: "rectangle"
+                password: True
+                icon_left: "lock"
+                
+            MDFlatButton:
+                text: "LOGIN"
+                pos_hint: {'center_x': 0.5}
+                theme_text_color: "Custom"
+                text_color: root.theme_cls.primary_color
+                # Updated method call to match Python (Fix 1)
+                on_release: root.attempt_login()
+                
+            MDLabel:
+                id: error_label
+                text: ""
+                color: root.theme_cls.error_color
+                halign: "center"
+                size_hint_y: None
+                height: self.texture_size[1]

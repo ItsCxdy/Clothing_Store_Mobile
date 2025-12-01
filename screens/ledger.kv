@@ -1,0 +1,27 @@
+<LedgerScreen>:
+    name: 'ledger'
+
+    MDBoxLayout:
+        orientation: 'vertical'
+        
+        MDTopAppBar:
+            title: "Trial Ledger"
+            elevation: 10
+            md_bg_color: root.theme_cls.primary_color
+            specific_text_color: 1, 1, 1, 1
+            size_hint_y: None
+            height: "56dp"
+            
+        MDLabel:
+            text: "Ledger View Under Construction"
+            halign: "center"
+            valign: "middle"
+            font_style: "H4"
+            size_hint_y: 1
+
+        MDLabel:
+            text: "This screen will display all pending trial transactions and customer accounts."
+            halign: "center"
+            valign: "top"
+            size_hint_y: None
+            height: self.texture_size[1]

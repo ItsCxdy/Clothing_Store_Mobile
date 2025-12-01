@@ -1,0 +1,7 @@
+[
+    {
+        "name": "Fix the white screen issue of the app. Use python venv to run the code as all the libaeries are downloaded in that.",
+        "deadline": "2025-12-02",
+        "progress_logs": []
+    }
+]

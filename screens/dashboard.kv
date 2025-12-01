@@ -1,0 +1,134 @@
+<DashboardScreen>:
+    name: 'dashboard'
+
+    MDNavigationLayout:
+        
+        MDScreenManager:
+            id: screen_manager_content
+            
+            MDScreen:
+                name: 'main_dashboard_content'
+                
+                MDBoxLayout:
+                    orientation: 'vertical'
+                    
+                    MDTopAppBar:
+                        id: dashboard_title
+                        title: "Clothing Store Dashboard"
+                        elevation: 10
+                        md_bg_color: root.theme_cls.primary_color
+                        specific_text_color: 1, 1, 1, 1
+                        size_hint_y: None
+                        height: "56dp"
+                        # Button to toggle the Navigation Drawer
+                        left_action_items: [["menu", lambda x: nav_drawer.set_state("toggle")]]
+                        
+                    # Main Content Area
+                    MDScrollView: # Use a ScrollView for content that might exceed screen size
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            spacing: "10dp"
+                            padding: "10dp" # Padding for the main content area
+                            size_hint_y: None
+                            height: self.minimum_height
+                            
+                            MDLabel:
+                                text: "Quick Stats Overview"
+                                font_style: "H5"
+                                halign: "left" # Align left, not center
+                                size_hint_y: None
+                                height: self.texture_size[1]
+                                padding: ["10dp", 0] # Minor horizontal padding
+                                
+                            # FIX: Removed the unnecessary MDCard wrapping the main stats area, 
+                            # and instead placed the GridLayout directly.
+                            # The size hints that caused the shrinking are also removed.
+                            MDGridLayout:
+                                cols: 2
+                                spacing: "10dp"
+                                padding: "10dp"
+                                size_hint_y: None
+                                height: self.minimum_height
+                                
+                                MDCard:
+                                    padding: "15dp" # Increased internal padding
+                                    orientation: 'vertical'
+                                    size_hint_y: None
+                                    height: "100dp" # Fixed height for better visual consistency
+                                    MDLabel:
+                                        text: "Total Sales Today"
+                                        font_style: "Caption"
+                                    MDLabel:
+                                        id: sales_today
+                                        text: "$0.00"
+                                        font_style: "H4"
+                                        theme_text_color: "Primary"
+                                        
+                                MDCard:
+                                    padding: "15dp" # Increased internal padding
+                                    orientation: 'vertical'
+                                    size_hint_y: None
+                                    height: "100dp" # Fixed height for better visual consistency
+                                    MDLabel:
+                                        text: "Pending Trials"
+                                        font_style: "Caption"
+                                    MDLabel:
+                                        id: pending_trials
+                                        text: "0 items"
+                                        font_style: "H4"
+                                        theme_text_color: "Error"
+
+                            # Placeholder for future sections (e.g., Inventory Alerts)
+                            MDLabel:
+                                text: "Recent Activity/Alerts Placeholder"
+                                font_style: "H6"
+                                size_hint_y: None
+                                height: self.texture_size[1]
+                                padding: ["10dp", "30dp", "10dp", "10dp"]
+                                
+
+
+        # Navigation Drawer Definition
+        MDNavigationDrawer:
+            id: nav_drawer
+            
+            MDNavigationDrawerMenu:
+                
+                MDNavigationDrawerHeader:
+                    title: "Menu"
+                    # Robust text binding
+                    text: "Welcome, " + app.user_role.capitalize() if app.user_role else "Welcome, User"
+                    font_style: "H6"
+                    
+                MDNavigationDrawerItem:
+                    icon: "view-dashboard"
+                    text: "Dashboard"
+                    # Changed navigation to close drawer and switch main app screen
+                    on_release: nav_drawer.set_state("close"); root.manager.current = 'dashboard'
+                    
+                MDNavigationDrawerItem:
+                    icon: "cash-register"
+                    text: "Point of Sale"
+                    on_release: nav_drawer.set_state("close"); root.manager.current = 'pos'
+
+                MDNavigationDrawerItem:
+                    icon: "archive-outline"
+                    text: "Inventory"
+                    on_release: nav_drawer.set_state("close"); root.manager.current = 'inventory'
+
+                MDNavigationDrawerItem:
+                    icon: "clipboard-list-outline"
+                    text: "Trial Ledger"
+                    on_release: nav_drawer.set_state("close"); root.manager.current = 'ledger'
+                    
+                MDNavigationDrawerItem:
+                    icon: "chart-bar"
+                    text: "Reports"
+                    on_release: nav_drawer.set_state("close"); root.manager.current = 'reports'
+
+                MDNavigationDrawerDivider:
+
+                MDNavigationDrawerItem:
+                    icon: "logout"
+                    text: "Logout"
+                    on_release: nav_drawer.set_state("close"); root.logout()

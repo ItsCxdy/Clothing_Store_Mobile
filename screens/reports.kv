@@ -1,0 +1,103 @@
+<ReportsScreen>:
+# Name: 'reports'
+
+MDBoxLayout:
+    orientation: 'vertical'
+    padding: "10dp"
+    spacing: "10dp"
+    
+    MDTopAppBar:
+        title: "Business Reports & Analytics"
+        elevation: 1
+        md_bg_color: root.theme_cls.accent_color
+        specific_text_color: 1, 1, 1, 1
+        size_hint_y: None
+        height: "56dp"
+    
+    MDCard:
+        orientation: 'vertical'
+        padding: "10dp"
+        spacing: "15dp"
+        elevation: 2
+        size_hint_y: None
+        height: "150dp"
+        
+        MDLabel:
+            text: "Quick Summary"
+            font_style: "H6"
+            size_hint_y: None
+            height: self.texture_size[1]
+            
+        MDGridLayout:
+            cols: 3
+            spacing: "10dp"
+            
+            BoxLayout:
+                orientation: 'vertical'
+                MDLabel:
+                    text: "Total Sales"
+                    font_style: "Caption"
+                MDLabel:
+                    id: total_sales_label
+                    text: "$0.00"
+                    font_style: "H5"
+                    theme_text_color: "Primary"
+            
+            BoxLayout:
+                orientation: 'vertical'
+                MDLabel:
+                    text: "Total Profit"
+                    font_style: "Caption"
+                MDLabel:
+                    id: total_profit_label
+                    text: "$0.00"
+                    font_style: "H5"
+                    # FIX: Changed 'Success' to 'Primary' (Valid option)
+                    theme_text_color: "Primary" 
+
+            BoxLayout:
+                orientation: 'vertical'
+                MDLabel:
+                    text: "Items on Trial"
+                    font_style: "Caption"
+                MDLabel:
+                    id: items_on_trial_label
+                    text: "0"
+                    font_style: "H5"
+                    theme_text_color: "Error"
+                    
+    MDCard:
+        orientation: 'vertical'
+        padding: "10dp"
+        spacing: "10dp"
+        elevation: 2
+        size_hint_y: 1
+        
+        MDLabel:
+            text: "Vendor Performance Report"
+            font_style: "H6"
+            size_hint_y: None
+            height: self.texture_size[1]
+            
+        MDRecycleView:
+            id: vendor_report_rv
+            key_viewclass: 'viewclass'
+            key_size: 'height'
+            
+            RecycleBoxLayout:
+                default_size: None, dp(48)
+                default_size_hint: 1, None
+                size_hint_y: None
+                height: self.minimum_height
+                orientation: 'vertical'
+                padding: "5dp"
+                spacing: "2dp"
+                
+                # Placeholder report item structure
+                MDCard:
+                    size_hint_y: None
+                    height: dp(48)
+                    padding: "10dp"
+                    MDLabel:
+                        text: "Vendor Name: Total Sold (Stock Remaining)"
+                        halign: "left"

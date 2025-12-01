@@ -1,0 +1,129 @@
+# screens/billing_screen.py
+
+from kivymd.uix.screen import MDScreen
+from kivy.properties import ObjectProperty, StringProperty, ListProperty
+from kivymd.app import MDApp
+from kivy.clock import Clock # Used for debounce/scheduling
+
+class BillingScreen(MDScreen):
+    """
+    Screen dedicated to Point of Sale (POS) operations (imported as PosScreen in main.py).
+    """
+    db = ObjectProperty(None)
+    queries = ObjectProperty(None)
+    
+    # State Management for POS
+    search_query = StringProperty("")
+    # Stores items as a list of dictionaries: [{'id': 101, 'name': 'T-Shirt', 'price': 19.99, 'qty': 1, 'total': 19.99}]
+    cart_items = ListProperty([])
+    
+    def set_dependencies(self, db_handler, queries_handler):
+        """Method called from main.py to inject DB and Queries objects."""
+        self.db = db_handler
+        self.queries = queries_handler
+        self.reset_cart()
+        
+    def on_enter(self):
+        """Called when the screen becomes the current one."""
+        print("Billing/POS Screen entered.")
+        
+    def reset_cart(self):
+        """Clears the current transaction cart."""
+        self.cart_items = []
+        
+    def add_item_to_cart(self, product_data):
+        """Adds a selected item to the cart, handling quantity updates."""
+        
+        # We need to create a deep copy of cart_items to modify and reassign 
+        # it, which correctly triggers the Kivy ListProperty update.
+        temp_cart = list(self.cart_items)
+        found = False
+        
+        # Check if the item is already in the cart
+        for item in temp_cart:
+            # Assuming product_data has a unique identifier like 'id'
+            if item['id'] == product_data['id']:
+                item['qty'] += 1
+                item['total'] = round(item['qty'] * item['price'], 2)
+                found = True
+                break
+                
+        if not found:
+            # Add new item
+            new_item = {
+                'id': product_data.get('id', 0), 
+                'name': product_data.get('name', 'Unknown Product'),
+                'price': round(product_data.get('selling_price', 0.0), 2),
+                'qty': 1,
+                'total': round(product_data.get('selling_price', 0.0), 2),
+            }
+            temp_cart.append(new_item)
+            
+        # Reassign the temporary list to trigger the Kivy ListProperty update
+        self.cart_items = temp_cart
+        
+        print(f"Item added: {product_data.get('name')}. Current items in cart: {len(self.cart_items)}")
+        
+    def get_cart_total(self):
+        """Calculates the total price of all items in the cart."""
+        total = sum(item['total'] for item in self.cart_items)
+        return f"${total:.2f}"
+
+    def simulate_product_lookup(self, sku_or_name):
+        """
+        Simulates looking up a product based on SKU or name.
+        This will be replaced by self.queries later.
+        """
+        if not sku_or_name:
+            return []
+
+        # --- DUMMY DATA FOR TESTING ---
+        dummy_products = [
+            {'id': 101, 'name': 'Blue T-Shirt - M', 'sku': 'BT-M-101', 'selling_price': 19.99, 'stock': 5},
+            {'id': 102, 'name': 'Red Hoodie - L', 'sku': 'RH-L-102', 'selling_price': 49.50, 'stock': 2},
+            {'id': 103, 'name': 'Jeans - Size 32', 'sku': 'JNS-32-103', 'selling_price': 79.00, 'stock': 10},
+        ]
+        
+        query = sku_or_name.lower()
+        results = [
+            p for p in dummy_products 
+            if query in p['sku'].lower() or query in p['name'].lower()
+        ]
+        
+        return results
+
+    def process_search(self, query):
+        """
+        Handles the product search input using debounce.
+        """
+        self.search_query = query
+        # Cancel any previous scheduled search
+        Clock.unschedule(self._perform_search)
+        # Schedule the search to run after 0.5 seconds of no new input
+        Clock.schedule_once(self._perform_search, 0.5)
+
+    def _perform_search(self, dt):
+        """Performs the actual product search based on search_query."""
+        if self.search_query:
+            results = self.simulate_product_lookup(self.search_query)
+            
+            print(f"Search results for '{self.search_query}': {len(results)} found.")
+            
+            # Auto-add if exact match (e.g., successful SKU scan)
+            if len(results) == 1:
+                self.add_item_to_cart(results[0])
+                # Clear search query field after successful scan/match
+                self.ids.search_input.text = "" 
+            
+            # *** FUTURE WORK: Update a ListView for multiple results here ***
+        
+    def complete_transaction(self):
+        """Simulates completing the sale transaction."""
+        if not self.cart_items:
+            print("Cannot complete transaction: Cart is empty.")
+            # In a real app, show a notification/toast here
+            return
+            
+        print(f"Transaction completed! Total: {self.get_cart_total()}")
+        # Here you would: 1. Record transaction, 2. Update inventory.
+        self.reset_cart()

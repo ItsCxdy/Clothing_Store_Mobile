@@ -1,0 +1,151 @@
+# screens/billing.kv
+
+# REMOVED: #:import ListAdapter kivy.adapters.listadapter.ListAdapter
+#:import ListItemButton kivymd.uix.list.MDListItemButton
+
+# Custom widget to display cart items (automatically reused for each item)
+<CartListItem@MDListItem>:
+    item_data: {}
+    text: root.item_data.get('name', '')
+    secondary_text: f"x{root.item_data.get('qty', 0)} @ ${root.item_data.get('price', 0):.2f} = ${root.item_data.get('total', 0):.2f}"
+
+<BillingScreen>:
+    name: 'pos'
+
+    MDBoxLayout:
+        orientation: 'vertical'
+        
+        MDTopAppBar:
+            title: "Point of Sale (POS)"
+            elevation: 10
+            md_bg_color: root.theme_cls.primary_color
+            specific_text_color: 1, 1, 1, 1
+            size_hint_y: None
+            height: "56dp"
+            
+        MDBoxLayout:
+            id: main_content_area
+            # Responsive layout: Horizontal for wide screens, Vertical for mobile/narrow
+            orientation: 'horizontal' if self.width > 600 else 'vertical'
+            padding: "10dp"
+            spacing: "10dp"
+            
+            # ----------------------------------------------------
+            # 1. LEFT PANEL: Product Search and Lookup (40% width on desktop)
+            # ----------------------------------------------------
+            MDBoxLayout:
+                orientation: 'vertical'
+                size_hint_x: 0.4 if main_content_area.orientation == 'horizontal' else 1
+                spacing: "10dp"
+                padding: "10dp"
+                
+                MDLabel:
+                    text: "Product Lookup"
+                    font_style: "H6"
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                
+                MDTextField:
+                    id: search_input
+                    hint_text: "Scan SKU or Enter Product Name"
+                    mode: "rectangle"
+                    size_hint_y: None
+                    height: "48dp"
+                    icon_right: "barcode-scan"
+                    on_text: root.process_search(self.text) 
+                
+                MDLabel:
+                    text: "Click a product below to add to cart (Simulated)"
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                    
+                MDScrollView:
+                    size_hint_y: 1
+                    MDList:
+                        id: product_results_list
+                        
+                        # --- DUMMY ITEMS FOR MANUAL CLICKING ---
+                        MDListItem:
+                            text: "Blue T-Shirt - M (SKU: BT-M-101)"
+                            secondary_text: "$19.99 | Stock: 5"
+                            on_release: root.add_item_to_cart({'id': 101, 'name': 'Blue T-Shirt - M', 'selling_price': 19.99})
+                        MDListItem:
+                            text: "Red Hoodie - L (SKU: RH-L-102)"
+                            secondary_text: "$49.50 | Stock: 2"
+                            on_release: root.add_item_to_cart({'id': 102, 'name': 'Red Hoodie - L', 'selling_price': 49.50})
+                        MDListItem:
+                            text: "Jeans - Size 32 (SKU: JNS-32-103)"
+                            secondary_text: "$79.00 | Stock: 10"
+                            on_release: root.add_item_to_cart({'id': 103, 'name': 'Jeans - Size 32', 'selling_price': 79.00})
+            
+            # ----------------------------------------------------
+            # 2. RIGHT PANEL: Cart and Total (60% width on desktop)
+            # ----------------------------------------------------
+            MDBoxLayout:
+                orientation: 'vertical'
+                size_hint_x: 0.6 if main_content_area.orientation == 'horizontal' else 1
+                spacing: "10dp"
+                padding: "10dp"
+                
+                MDLabel:
+                    text: "Current Cart"
+                    font_style: "H6"
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                
+                # Cart items list (RecycleView)
+                RecycleView:
+                    id: cart_rv
+                    # data is linked to the Python list property
+                    data: root.cart_items
+                    viewclass: 'CartListItem'
+                    do_scroll_y: True
+                    
+                    RecycleBoxLayout:
+                        default_size: None, dp(48)
+                        default_size_hint: 1, None
+                        size_hint_y: None
+                        height: self.minimum_height
+                        orientation: 'vertical'
+                        spacing: dp(2)
+                        
+                # Total Display
+                MDCard:
+                    size_hint_y: None
+                    height: "120dp"
+                    padding: "15dp"
+                    orientation: 'vertical'
+                    elevation: 5
+                    
+                    MDLabel:
+                        text: "SUBTOTAL"
+                        font_style: "Caption"
+                        size_hint_y: None
+                        height: self.texture_size[1]
+                        
+                    MDLabel:
+                        text: root.get_cart_total() 
+                        font_style: "H3"
+                        theme_text_color: "Primary"
+                        
+                # Action Buttons
+                MDBoxLayout:
+                    size_hint_y: None
+                    height: "48dp"
+                    spacing: "10dp"
+                    
+                    MDRaisedButton:
+                        text: "Clear Cart"
+                        theme_text_color: "Custom"
+                        text_color: 1, 1, 1, 1
+                        md_bg_color: app.theme_cls.accent_color
+                        size_hint_x: 0.5
+                        on_release: root.reset_cart()
+                        
+                    MDRaisedButton:
+                        text: "Process Sale"
+                        theme_text_color: "Custom"
+                        text_color: 1, 1, 1, 1
+                        md_bg_color: app.theme_cls.primary_color
+                        size_hint_x: 0.5
+                        on_release: root.complete_transaction()
