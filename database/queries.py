@@ -83,40 +83,62 @@ class Queries:
         # The WHERE condition prevents stock from going below zero if we are decrementing.
         return self.db.execute_query(query, (quantity_change, product_id, quantity_change))
 
+    def search_products(self, query):
+        """
+        Fuzzy search for products by name or SKU.
+        Returns list of product dicts with relevant fields.
+        """
+        if not query:
+            return []
+        search_term = f'%{query.lower()}%'
+        sql = """
+        SELECT id, name, sku, sell_price, stock_quantity, size, color
+        FROM products
+        WHERE LOWER(name) LIKE ? OR LOWER(sku) LIKE ?
+        ORDER BY name ASC
+        LIMIT 20
+        """
+        results = self.db.execute_query(sql, (search_term, search_term), fetch_all=True)
+        return results or []
+
     # --- Transaction Queries ---
 
     def create_transaction(self, total_amount, payment_method, user_id, items_list):
         """
-        Creates a new transaction and related transaction items (atomic operation).
-        
-        :param total_amount: Total sale amount.
-        :param payment_method: How the customer paid.
-        :param user_id: ID of the user (salesperson) who made the sale.
-        :param items_list: List of tuples (product_id, quantity, price_at_sale).
+        Creates a new transaction and related transaction items (fully atomic).
+        Checks stock before updating, direct cursor ops, single commit.
         """
-        # Must manually manage cursor/connection for atomic operations
         try:
             # 1. Insert Transaction Header
             transaction_query = "INSERT INTO transactions (total_amount, payment_method, user_id) VALUES (?, ?, ?)"
             self.db.cursor.execute(transaction_query, (total_amount, payment_method, user_id))
             transaction_id = self.db.cursor.lastrowid
             
-            # 2. Insert Transaction Items and Update Stock
+            # 2. For each item: check stock, insert item, update stock
             for product_id, quantity, price_at_sale in items_list:
+                # Check sufficient stock
+                check_query = "SELECT stock_quantity FROM products WHERE id = ?"
+                self.db.cursor.execute(check_query, (product_id,))
+                stock_row = self.db.cursor.fetchone()
+                if not stock_row or stock_row[0] < quantity:
+                    raise sqlite3.Error(f"Insufficient stock for product {product_id}: {stock_row[0] if stock_row else 0} < {quantity}")
+                
                 # Insert item details
                 item_query = "INSERT INTO transaction_items (transaction_id, product_id, quantity, price_at_sale) VALUES (?, ?, ?, ?)"
                 self.db.cursor.execute(item_query, (transaction_id, product_id, quantity, price_at_sale))
                 
-                # Update stock (decrement stock)
-                self.update_product_stock(product_id, -quantity)
+                # Update stock atomically (direct cursor, no intermediate commit)
+                update_query = "UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?"
+                self.db.cursor.execute(update_query, (quantity, product_id))
             
-            # 3. Commit all changes
+            # 3. Single commit for all ops
             self.db.conn.commit()
+            print(f"[DB] Transaction {transaction_id} committed successfully.")
             return transaction_id
         
         except sqlite3.Error as e:
             self.db.conn.rollback()
-            print(f"[DB ERROR] Transaction failed: {e}")
+            print(f"[DB ERROR] Transaction failed (rolled back): {e}")
             return None
 
     # --- Trial Ledger Queries ---

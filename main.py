@@ -58,12 +58,12 @@ class ClothingStoreApp(MDApp):
         sm = ScreenManager()
         
         # Instantiate all screens
-        login_screen = LoginScreen()
-        dashboard_screen = DashboardScreen()
-        inventory_screen = InventoryScreen()
-        pos_screen = PosScreen() 
-        ledger_screen = LedgerScreen()
-        reports_screen = ReportsScreen()
+        login_screen = LoginScreen(name='login')
+        dashboard_screen = DashboardScreen(name='dashboard')
+        inventory_screen = InventoryScreen(name='inventory')
+        pos_screen = PosScreen(name='pos')
+        ledger_screen = LedgerScreen(name='ledger')
+        reports_screen = ReportsScreen(name='reports')
         
         # Inject dependencies into screens
         screens = [login_screen, dashboard_screen, inventory_screen, pos_screen, ledger_screen, reports_screen]

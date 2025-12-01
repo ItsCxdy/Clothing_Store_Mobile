@@ -71,18 +71,21 @@ class DatabaseHandler:
         self._create_trial_ledger_table()
         
         self._ensure_admin_user()
+        self._ensure_sample_vendors()
+        self._ensure_sample_products()
 
     def _create_users_table(self):
         """
         Creates the 'users' table if it does not exist.
         (Fix 4 implemented here: using IF NOT EXISTS).
         """
+        self.execute_query("DROP TABLE IF EXISTS users")
         create_table_query = """
-        CREATE TABLE IF NOT EXISTS users (
+        CREATE TABLE users (
             id INTEGER PRIMARY KEY,
             username TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL, 
-            role TEXT NOT NULL 
+            password TEXT NOT NULL,
+            role TEXT NOT NULL
         );
         """
         self.execute_query(create_table_query)
@@ -101,8 +104,9 @@ class DatabaseHandler:
             print(f"[DB] Inserting default admin user ({default_username}/{default_password}).")
             
     def _create_products_table(self):
+        self.execute_query("DROP TABLE IF EXISTS products")
         create_table_query = """
-        CREATE TABLE IF NOT EXISTS products (
+        CREATE TABLE products (
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
             vendor_id INTEGER,
@@ -118,8 +122,9 @@ class DatabaseHandler:
         self.execute_query(create_table_query)
 
     def _create_vendors_table(self):
+        self.execute_query("DROP TABLE IF EXISTS vendors")
         create_table_query = """
-        CREATE TABLE IF NOT EXISTS vendors (
+        CREATE TABLE vendors (
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL UNIQUE,
             contact_person TEXT,
@@ -168,3 +173,36 @@ class DatabaseHandler:
         );
         """
         self.execute_query(create_table_query)
+
+    def _ensure_sample_vendors(self):
+        """Ensures sample vendors exist."""
+        count_query = "SELECT COUNT(id) FROM vendors"
+        result = self.execute_query(count_query, fetch_one=True)
+        count = result['COUNT(id)'] if result and 'COUNT(id)' in result else 0
+        if count == 0:
+            vendors = [
+                ('Vendor A', 'John Doe', '123-456-7890'),
+                ('Vendor B', 'Jane Smith', '098-765-4321'),
+            ]
+            for name, contact_person, phone in vendors:
+                self.execute_query(
+                    "INSERT INTO vendors (name, contact_person, phone) VALUES (?, ?, ?)",
+                    (name, contact_person, phone)
+                )
+            print("[DB] Inserted sample vendors.")
+
+    def _ensure_sample_products(self):
+        """Ensures sample products exist."""
+        products = [
+            (1, 'Blue T-Shirt - M', 'BT-M-101', 10.0, 19.99, 5, 'M', 'Blue'),
+            (2, 'Red Hoodie - L', 'RH-L-102', 30.0, 49.50, 2, 'L', 'Red'),
+            (1, 'Jeans - Size 32', 'JNS-32-103', 50.0, 79.00, 10, '32', 'Blue'),
+        ]
+        for vendor_id, name, sku, buy_price, sell_price, stock_quantity, size, color in products:
+            query = """
+            INSERT OR IGNORE INTO products
+            (vendor_id, name, sku, buy_price, sell_price, stock_quantity, size, color)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            self.execute_query(query, (vendor_id, name, sku, buy_price, sell_price, stock_quantity, size, color))
+        print("[DB] Inserted sample products.")

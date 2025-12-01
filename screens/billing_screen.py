@@ -2,6 +2,7 @@
 
 from kivymd.uix.screen import MDScreen
 from kivy.properties import ObjectProperty, StringProperty, ListProperty
+from kivymd.uix.list import TwoLineListItem
 from kivymd.app import MDApp
 from kivy.clock import Clock # Used for debounce/scheduling
 
@@ -16,6 +17,8 @@ class BillingScreen(MDScreen):
     search_query = StringProperty("")
     # Stores items as a list of dictionaries: [{'id': 101, 'name': 'T-Shirt', 'price': 19.99, 'qty': 1, 'total': 19.99}]
     cart_items = ListProperty([])
+    # Search results for product list
+    search_results = ListProperty([])
     
     def set_dependencies(self, db_handler, queries_handler):
         """Method called from main.py to inject DB and Queries objects."""
@@ -34,7 +37,7 @@ class BillingScreen(MDScreen):
     def add_item_to_cart(self, product_data):
         """Adds a selected item to the cart, handling quantity updates."""
         
-        # We need to create a deep copy of cart_items to modify and reassign 
+        # We need to create a deep copy of cart_items to modify and reassign
         # it, which correctly triggers the Kivy ListProperty update.
         temp_cart = list(self.cart_items)
         found = False
@@ -43,19 +46,27 @@ class BillingScreen(MDScreen):
         for item in temp_cart:
             # Assuming product_data has a unique identifier like 'id'
             if item['id'] == product_data['id']:
+                if item.get('stock_quantity', 0) < item['qty'] + 1:
+                    print(f"Cannot add more {item['name']}: low stock ({item.get('stock_quantity')})")
+                    return
                 item['qty'] += 1
                 item['total'] = round(item['qty'] * item['price'], 2)
                 found = True
                 break
                 
         if not found:
+            stock_qty = product_data.get('stock_quantity', 0)
+            if stock_qty < 1:
+                print(f"Out of stock: {product_data.get('name')}")
+                return
             # Add new item
             new_item = {
-                'id': product_data.get('id', 0), 
+                'id': product_data.get('id', 0),
                 'name': product_data.get('name', 'Unknown Product'),
-                'price': round(product_data.get('selling_price', 0.0), 2),
+                'price': round(product_data.get('sell_price', 0.0), 2),
                 'qty': 1,
-                'total': round(product_data.get('selling_price', 0.0), 2),
+                'total': round(product_data.get('sell_price', 0.0), 2),
+                'stock_quantity': stock_qty,
             }
             temp_cart.append(new_item)
             
@@ -69,28 +80,6 @@ class BillingScreen(MDScreen):
         total = sum(item['total'] for item in self.cart_items)
         return f"${total:.2f}"
 
-    def simulate_product_lookup(self, sku_or_name):
-        """
-        Simulates looking up a product based on SKU or name.
-        This will be replaced by self.queries later.
-        """
-        if not sku_or_name:
-            return []
-
-        # --- DUMMY DATA FOR TESTING ---
-        dummy_products = [
-            {'id': 101, 'name': 'Blue T-Shirt - M', 'sku': 'BT-M-101', 'selling_price': 19.99, 'stock': 5},
-            {'id': 102, 'name': 'Red Hoodie - L', 'sku': 'RH-L-102', 'selling_price': 49.50, 'stock': 2},
-            {'id': 103, 'name': 'Jeans - Size 32', 'sku': 'JNS-32-103', 'selling_price': 79.00, 'stock': 10},
-        ]
-        
-        query = sku_or_name.lower()
-        results = [
-            p for p in dummy_products 
-            if query in p['sku'].lower() or query in p['name'].lower()
-        ]
-        
-        return results
 
     def process_search(self, query):
         """
@@ -104,8 +93,8 @@ class BillingScreen(MDScreen):
 
     def _perform_search(self, dt):
         """Performs the actual product search based on search_query."""
-        if self.search_query:
-            results = self.simulate_product_lookup(self.search_query)
+        if self.search_query and self.queries:
+            results = self.queries.search_products(self.search_query)
             
             print(f"Search results for '{self.search_query}': {len(results)} found.")
             
@@ -113,17 +102,32 @@ class BillingScreen(MDScreen):
             if len(results) == 1:
                 self.add_item_to_cart(results[0])
                 # Clear search query field after successful scan/match
-                self.ids.search_input.text = "" 
+                self.ids.search_input.text = ""
             
-            # *** FUTURE WORK: Update a ListView for multiple results here ***
+            self.search_results = results
         
     def complete_transaction(self):
-        """Simulates completing the sale transaction."""
+        """Completes the real sale transaction."""
         if not self.cart_items:
             print("Cannot complete transaction: Cart is empty.")
-            # In a real app, show a notification/toast here
             return
-            
-        print(f"Transaction completed! Total: {self.get_cart_total()}")
-        # Here you would: 1. Record transaction, 2. Update inventory.
-        self.reset_cart()
+        
+        from kivymd.app import MDApp
+        app = MDApp.get_running_app()
+        if not app.user or 'id' not in app.user:
+            print("No logged in user.")
+            return
+        
+        total_amount = sum(item['total'] for item in self.cart_items)
+        items_list = [(item['id'], item['qty'], item['price']) for item in self.cart_items]
+        payment_method = "Cash"  # TODO: Add payment method selector
+        user_id = app.user['id']
+        
+        transaction_id = self.queries.create_transaction(
+            total_amount, payment_method, user_id, items_list
+        )
+        if transaction_id:
+            print(f"Transaction #{transaction_id} completed! Total: ${total_amount:.2f}")
+            self.reset_cart()
+        else:
+            print("Transaction failed (e.g., insufficient stock or DB error).")

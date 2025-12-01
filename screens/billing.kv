@@ -1,13 +1,16 @@
 # screens/billing.kv
 
-# REMOVED: #:import ListAdapter kivy.adapters.listadapter.ListAdapter
-#:import ListItemButton kivymd.uix.list.MDListItemButton
-
 # Custom widget to display cart items (automatically reused for each item)
-<CartListItem@MDListItem>:
+<CartListItem@TwoLineListItem>:
     item_data: {}
     text: root.item_data.get('name', '')
     secondary_text: f"x{root.item_data.get('qty', 0)} @ ${root.item_data.get('price', 0):.2f} = ${root.item_data.get('total', 0):.2f}"
+
+<ProductListItem@TwoLineListItem>:
+    item_data: {}
+    text: root.item_data.get('name', '')
+    secondary_text: f"SKU: {root.item_data.get('sku', '')} | ${root.item_data.get('sell_price', 0):.2f} | Stock: {root.item_data.get('stock_quantity', 0)}"
+    on_release: app.root.current_screen.add_item_to_cart({'id': root.item_data['id'], 'name': root.item_data['name'], 'sell_price': root.item_data['sell_price'], 'stock_quantity': root.item_data['stock_quantity']})
 
 <BillingScreen>:
     name: 'pos'
@@ -55,28 +58,25 @@
                     on_text: root.process_search(self.text) 
                 
                 MDLabel:
-                    text: "Click a product below to add to cart (Simulated)"
+                    text: "Search results (click to add to cart)"
                     size_hint_y: None
                     height: self.texture_size[1]
                     
                 MDScrollView:
                     size_hint_y: 1
-                    MDList:
+                    RecycleView:
                         id: product_results_list
-                        
-                        # --- DUMMY ITEMS FOR MANUAL CLICKING ---
-                        MDListItem:
-                            text: "Blue T-Shirt - M (SKU: BT-M-101)"
-                            secondary_text: "$19.99 | Stock: 5"
-                            on_release: root.add_item_to_cart({'id': 101, 'name': 'Blue T-Shirt - M', 'selling_price': 19.99})
-                        MDListItem:
-                            text: "Red Hoodie - L (SKU: RH-L-102)"
-                            secondary_text: "$49.50 | Stock: 2"
-                            on_release: root.add_item_to_cart({'id': 102, 'name': 'Red Hoodie - L', 'selling_price': 49.50})
-                        MDListItem:
-                            text: "Jeans - Size 32 (SKU: JNS-32-103)"
-                            secondary_text: "$79.00 | Stock: 10"
-                            on_release: root.add_item_to_cart({'id': 103, 'name': 'Jeans - Size 32', 'selling_price': 79.00})
+                        data: root.search_results
+                        viewclass: 'ProductListItem'
+                        do_scroll_y: True
+
+                        RecycleBoxLayout:
+                            default_size: None, dp(48)
+                            default_size_hint: 1, None
+                            size_hint_y: None
+                            height: self.minimum_height
+                            orientation: 'vertical'
+                            spacing: dp(2)
             
             # ----------------------------------------------------
             # 2. RIGHT PANEL: Cart and Total (60% width on desktop)
