@@ -35,9 +35,9 @@ class ClothingStoreApp(MDApp):
 
     def build(self):
         # Set the application theme and colors
-        self.theme_cls.primary_palette = "Blue"
+        self.theme_cls.primary_palette = "DeepPurple"
         self.theme_cls.accent_palette = "LightBlue"
-        self.theme_cls.theme_style = "Light" 
+        self.theme_cls.theme_style = "Light"
 
         # --- 1. Load All KV Files Explicitly ---
         kv_files_dir = os.path.join(os.path.dirname(__file__), "screens")

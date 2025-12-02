@@ -78,7 +78,7 @@ class BillingScreen(MDScreen):
     def get_cart_total(self):
         """Calculates the total price of all items in the cart."""
         total = sum(item['total'] for item in self.cart_items)
-        return f"${total:.2f}"
+        return f"{total:.2f}"
 
 
     def process_search(self, query):
@@ -131,3 +131,10 @@ class BillingScreen(MDScreen):
             self.reset_cart()
         else:
             print("Transaction failed (e.g., insufficient stock or DB error).")
+            
+    def go_back_to_dashboard(self):
+        """Navigates back to the dashboard screen."""
+        from kivymd.app import MDApp
+        app = MDApp.get_running_app()
+        if app.root and hasattr(app.root, 'current'):
+            app.root.current = 'dashboard'

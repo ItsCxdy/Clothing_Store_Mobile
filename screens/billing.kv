@@ -25,6 +25,7 @@
             specific_text_color: 1, 1, 1, 1
             size_hint_y: None
             height: "56dp"
+            left_action_items: [["arrow-left", lambda x: root.go_back_to_dashboard()]]
             
         MDBoxLayout:
             id: main_content_area
@@ -146,6 +147,6 @@
                         text: "Process Sale"
                         theme_text_color: "Custom"
                         text_color: 1, 1, 1, 1
-                        md_bg_color: app.theme_cls.primary_color
+                        md_bg_color: root.theme_cls.primary_color
                         size_hint_x: 0.5
                         on_release: root.complete_transaction()
